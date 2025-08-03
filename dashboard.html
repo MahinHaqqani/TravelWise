@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Welcome Back</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 40px;
+      background: url('assets/travel-bg.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+    .container {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 800px;
+      margin: auto;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    #welcomeMsg {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .trip {
+      background: #ffffff;
+      color: #333;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    button {
+      padding: 8px 12px;
+      background: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .actions {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .actions button {
+      margin: 0 10px;
+      background: #f44336;
+    }
+    .actions .new-trip-btn {
+      background: #4CAF50;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <h2 id="welcomeMsg">Welcome back 👋</h2>
+      <button onclick="logout()">🚪 Logout</button>
+    </div>
+
+    <h1>🎒 Your Recent Trips</h1>
+    <div id="tripList"></div>
+
+    <div class="actions">
+      <button class="new-trip-btn" onclick="startNewTrip()">➕ No thanks, start a new trip</button>
+    </div>
+  </div>
+
+  <script>
+    const username = localStorage.getItem("loggedInUser") || "Traveler";
+    document.getElementById("welcomeMsg").innerText = `Welcome back, ${username} 👋`;
+
+    const list = document.getElementById("tripList");
+    const history = JSON.parse(localStorage.getItem("recentTrips")) || [];
+
+    if (history.length === 0) {
+      list.innerHTML = "<p>No recent trips found. Start planning!</p>";
+    } else {
+      history.forEach((trip, index) => {
+        const div = document.createElement("div");
+        div.className = "trip";
+        div.innerHTML = `
+          <strong>${trip.destination}</strong><br>
+          From: ${trip.origin}<br>
+          Dates: ${new Date(trip.startDate).toDateString()} – ${new Date(trip.endDate).toDateString()}<br>
+          Interests: ${trip.interests.join(", ")}<br><br>
+          <button onclick="loadTrip(${index})">🗺️ Open Itinerary</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function loadTrip(index) {
+      const selected = history[index];
+      localStorage.setItem("selectedCountry", selected.destination);
+      localStorage.setItem("origin", selected.origin);
+      localStorage.setItem("startDate", selected.startDate);
+      localStorage.setItem("endDate", selected.endDate);
+      localStorage.setItem("rankedInterests", JSON.stringify(selected.interests));
+      window.location.href = "itinerary.html";
+    }
+
+    function startNewTrip() {
+      window.location.href = "interest.html";
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "auth.html";
+    }
+  </script>
+</body>
+</html>

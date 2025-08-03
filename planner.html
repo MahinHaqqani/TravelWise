@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Plan Your Trip</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 90vh;
+      background: #f4f7fa;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .planner-box {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .destination-info {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .destination-info span {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="planner-box">
+    <div class="destination-info">
+      <h1>You're planning a trip to <span id="countryName"></span>!</h1>
+      <p>Tourism Theme: <span id="countryTheme"></span></p>
+    </div>
+
+    <label for="origin">Your Country of Origin:</label>
+    <input type="text" id="origin" placeholder="e.g. India">
+
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate">
+
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate">
+
+    <button onclick="generateItinerary()">Generate Itinerary</button>
+  </div>
+
+  <script>
+    const destination = localStorage.getItem("selectedCountry");
+    const theme = localStorage.getItem("theme");
+
+    document.getElementById("countryName").innerText = destination || "Somewhere Awesome";
+    document.getElementById("countryTheme").innerText = theme || "Adventure";
+
+    function generateItinerary() {
+      const origin = document.getElementById("origin").value;
+      const start = document.getElementById("startDate").value;
+      const end = document.getElementById("endDate").value;
+
+      if (!origin || !start || !end) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      localStorage.setItem("origin", origin);
+      localStorage.setItem("startDate", start);
+      localStorage.setItem("endDate", end);
+
+      window.location.href = "itinerary.html"; // This page will show the generated plan!
+    }
+  </script>
+</body>
+</html>

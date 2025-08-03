@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TravelWise</title>
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
+
+  <!-- External CSS -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>🧳 TravelWise</h1>
+
+    <!-- LOGIN OPTIONS -->
+    <div id="auth-section">
+      <button id="signin-btn">Sign in with Gmail</button>
+      <button id="signup-btn">Sign up with Gmail</button>
+      <button id="guest-btn">Continue as Guest</button>
+    </div>
+
+    <!-- USER INFO & LOGOUT -->
+    <div id="user-info" style="display: none;">
+      <p id="welcome-msg"></p>
+      <button id="logout-btn">Logout</button>
+    </div>
+
+    <!-- TRAVEL PLANNER -->
+    <div id="planner-section" style="display: none;">
+      <form id="tripForm">
+        <label for="origin">Origin:</label>
+        <input type="text" id="origin" placeholder="e.g., Delhi, Mumbai, Bangalore" required />
+
+        <label for="destination">Destination:</label>
+        <input type="text" id="destination" placeholder="e.g., Paris, Tokyo, Goa" required />
+
+        <label for="startDate">Start Date:</label>
+        <input type="date" id="startDate" required />
+
+        <label for="endDate">End Date:</label>
+        <input type="date" id="endDate" required />
+
+        <label for="budget">Budget (INR):</label>
+        <input type="number" id="budget" placeholder="e.g., 20000" required />
+
+        <label for="interests">Interests:</label>
+        <select id="interests" multiple>
+          <option value="nature">Nature</option>
+          <option value="history">History</option>
+          <option value="food">Food</option>
+          <option value="adventure">Adventure</option>
+          <option value="shopping">Shopping</option>
+        </select>
+
+        <button type="submit">Generate Itinerary</button>
+      </form>
+
+      <div id="output"></div>
+
+      <!-- Live Features (Google Map Embed) -->
+      <div id="map-section" style="display: none;">
+        <h3>Explore your destination on the map:</h3>
+        <iframe
+        id="google-map"
+        width="100%"
+        height="300"
+        style="border:0"
+        loading="lazy"
+        allowfullscreen
+        src=""></iframe>
+      </div>
+
+      <!-- Weather Forecast -->
+      <div id="weather-section" style="display: none;">
+        <h3>Weather Forecast:</h3>
+        <div id="weather-output"></div>
+      </div>
+
+      <!-- Flight Suggestions -->
+      <div id="flights-section" style="display: none;">
+        <h3>Suggested Flights:</h3>
+        <ul id="flight-list"></ul>
+      </div>
+    </div>
+  </div>
+      <section id="hotels-section" style="display: none;">
+        <h2>🏨 Hotel Recommendations</h2>
+        <div id="hotels-output"></div>
+      </section>
+      
+      
+
+  <!-- Firebase SDK Integration -->
+  <script type="module" src="auth.js"></script>
+
+  <!-- Travel Planner Logic -->
+  <script src="script.js"></script>
+</body>
+</html>

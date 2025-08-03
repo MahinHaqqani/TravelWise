@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Explore World - Travel Planner</title>
+  <style>
+    #chartdiv {
+      width: 100%;
+      height: 90vh;
+    }
+    #hover-box {
+      text-align: center;
+      margin-top: 10px;
+      font-family: sans-serif;
+      font-size: 18px;
+    }
+  </style>
+  <!-- amCharts libraries -->
+  <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/geodata/worldLow.js"></script>
+  <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+</head>
+<body>
+  <div id="chartdiv"></div>
+  <div id="hover-box">Hover over a country to see what it's known for!</div>
+<div id="top-choice-container" style="margin: 20px auto; max-width: 800px; padding: 15px; background: #f9f9f9; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,0.1);">
+  <h3>Top Choices For You Based on Your Interests:</h3>
+  <ul id="top-choice-list" style="list-style: none; padding-left: 0;"></ul>
+</div>
+
+
+  <script>
+    // Country data: tourism focus
+    const countryThemes = {
+  "AF": { theme: "Adventure", color: "#FF6B6B" },       // Afghanistan
+  "AL": { theme: "History", color: "#6B9BFF" },         // Albania
+  "DZ": { theme: "History", color: "#6B9BFF" },         // Algeria
+  "AS": { theme: "Beach", color: "#5DADE2" },           // American Samoa
+  "AD": { theme: "History", color: "#6B9BFF" },         // Andorra
+  "AO": { theme: "Nature", color: "#58D68D" },          // Angola
+  "AI": { theme: "Beach", color: "#5DADE2" },           // Anguilla
+  "AQ": { theme: "Nature", color: "#58D68D" },          // Antarctica
+  "AG": { theme: "Beach", color: "#5DADE2" },           // Antigua and Barbuda
+  "AR": { theme: "Food", color: "#FFA07A" },            // Argentina
+  "AM": { theme: "History", color: "#6B9BFF" },         // Armenia
+  "AW": { theme: "Beach", color: "#5DADE2" },           // Aruba
+  "AU": { theme: "Adventure", color: "#FF6B6B" },       // Australia
+  "AT": { theme: "History", color: "#6B9BFF" },         // Austria
+  "AZ": { theme: "History", color: "#6B9BFF" },         // Azerbaijan
+  "BS": { theme: "Beach", color: "#5DADE2" },           // Bahamas
+  "BH": { theme: "Luxury", color: "#D4AF37" },          // Bahrain
+  "BD": { theme: "Spirituality", color: "#D8BFD8" },    // Bangladesh
+  "BB": { theme: "Beach", color: "#5DADE2" },           // Barbados
+  "BY": { theme: "History", color: "#6B9BFF" },         // Belarus
+  "BE": { theme: "History", color: "#6B9BFF" },         // Belgium
+  "BZ": { theme: "Nature", color: "#58D68D" },          // Belize
+  "BJ": { theme: "Culture", color: "#FFCE56" },         // Benin
+  "BM": { theme: "Luxury", color: "#D4AF37" },          // Bermuda
+  "BT": { theme: "Spirituality", color: "#D8BFD8" },    // Bhutan
+  "BO": { theme: "Nature", color: "#58D68D" },          // Bolivia
+  "BA": { theme: "History", color: "#6B9BFF" },         // Bosnia and Herzegovina
+  "BW": { theme: "Wildlife", color: "#52BE80" },        // Botswana
+  "BR": { theme: "Nature", color: "#58D68D" },          // Brazil
+  "IO": { theme: "Beach", color: "#5DADE2" },           // British Indian Ocean Territory
+  "VG": { theme: "Beach", color: "#5DADE2" },           // British Virgin Islands
+  "BN": { theme: "Nature", color: "#58D68D" },          // Brunei
+  "BG": { theme: "History", color: "#6B9BFF" },         // Bulgaria
+  "BF": { theme: "Culture", color: "#FFCE56" },         // Burkina Faso
+  "BI": { theme: "Nature", color: "#58D68D" },          // Burundi
+  "KH": { theme: "History", color: "#6B9BFF" },         // Cambodia
+  "CM": { theme: "Nature", color: "#58D68D" },          // Cameroon
+  "CA": { theme: "Nature", color: "#58D68D" },          // Canada
+  "CV": { theme: "Beach", color: "#5DADE2" },           // Cape Verde
+  "KY": { theme: "Beach", color: "#5DADE2" },           // Cayman Islands
+  "CF": { theme: "Nature", color: "#58D68D" },          // Central African Republic
+  "TD": { theme: "Adventure", color: "#FF6B6B" },       // Chad
+  "CL": { theme: "Nature", color: "#58D68D" },          // Chile
+  "CN": { theme: "History", color: "#6B9BFF" },         // China
+  "CX": { theme: "Beach", color: "#5DADE2" },           // Christmas Island
+  "CC": { theme: "Beach", color: "#5DADE2" },           // Cocos Islands
+  "CO": { theme: "Nature", color: "#58D68D" },          // Colombia
+  "KM": { theme: "Beach", color: "#5DADE2" },           // Comoros
+  "CG": { theme: "Nature", color: "#58D68D" },          // Congo
+  "CD": { theme: "Nature", color: "#58D68D" },          // Congo (DRC)
+  "CK": { theme: "Beach", color: "#5DADE2" },           // Cook Islands
+  "CR": { theme: "Nature", color: "#58D68D" },          // Costa Rica
+  "CI": { theme: "Culture", color: "#FFCE56" },         // Côte d'Ivoire
+  "HR": { theme: "History", color: "#6B9BFF" },         // Croatia
+  "CU": { theme: "Culture", color: "#FFCE56" },         // Cuba
+  "CY": { theme: "History", color: "#6B9BFF" },         // Cyprus
+  "CZ": { theme: "History", color: "#6B9BFF" },         // Czech Republic
+  "DK": { theme: "Culture", color: "#FFCE56" },         // Denmark
+  "DJ": { theme: "Nature", color: "#58D68D" },          // Djibouti
+  "DM": { theme: "Beach", color: "#5DADE2" },           // Dominica
+  "DO": { theme: "Beach", color: "#5DADE2" },           // Dominican Republic
+  "EC": { theme: "Nature", color: "#58D68D" },          // Ecuador
+  "EG": { theme: "History", color: "#6B9BFF" },         // Egypt
+  "SV": { theme: "History", color: "#6B9BFF" },         // El Salvador
+  "GQ": { theme: "Nature", color: "#58D68D" },          // Equatorial Guinea
+  "ER": { theme: "Adventure", color: "#FF6B6B" },       // Eritrea
+  "EE": { theme: "History", color: "#6B9BFF" },         // Estonia
+  "SZ": { theme: "Wildlife", color: "#52BE80" },        // Eswatini
+  "ET": { theme: "History", color: "#6B9BFF" },         // Ethiopia
+  "FK": { theme: "Nature", color: "#58D68D" },          // Falkland Islands
+  "FO": { theme: "Nature", color: "#58D68D" },          // Faroe Islands
+  "FJ": { theme: "Beach", color: "#5DADE2" },           // Fiji
+  "FI": { theme: "Nature", color: "#58D68D" },          // Finland
+  "FR": { theme: "History", color: "#6B9BFF" },         // France
+  "PF": { theme: "Beach", color: "#5DADE2" },           // French Polynesia
+  "GA": { theme: "Nature", color: "#58D68D" },          // Gabon
+  "GM": { theme: "Nature", color: "#58D68D" },          // Gambia
+  "GE": { theme: "History", color: "#6B9BFF" },         // Georgia
+  "DE": { theme: "History", color: "#6B9BFF" },         // Germany
+  "GH": { theme: "Culture", color: "#FFCE56" },         // Ghana
+  "GI": { theme: "History", color: "#6B9BFF" },         // Gibraltar
+  "GR": { theme: "History", color: "#6B9BFF" },         // Greece
+  "GL": { theme: "Nature", color: "#58D68D" },          // Greenland
+  "GD": { theme: "Beach", color: "#5DADE2" },           // Grenada
+  "GU": { theme: "Beach", color: "#5DADE2" },           // Guam
+  "GT": { theme: "History", color: "#6B9BFF" },         // Guatemala
+  "GG": { theme: "History", color: "#6B9BFF" },         // Guernsey
+  "GN": { theme: "Nature", color: "#58D68D" },          // Guinea
+  "GW": { theme: "Nature", color: "#58D68D" },          // Guinea-Bissau
+  "GY": { theme: "Nature", color: "#58D68D" },          // Guyana
+  "HT": { theme: "Culture", color: "#FFCE56" },         // Haiti
+  "HN": { theme: "History", color: "#6B9BFF" },         // Honduras
+  "HK": { theme: "Shopping", color: "#FF69B4" },        // Hong Kong
+  "HU": { theme: "History", color: "#6B9BFF" },         // Hungary
+  "IS": { theme: "Nature", color: "#58D68D" },          // Iceland
+  "IN": { theme: "Spirituality", color: "#D8BFD8" },    // India
+  "ID": { theme: "Beach", color: "#5DADE2" },           // Indonesia
+  "IR": { theme: "History", color: "#6B9BFF" },         // Iran
+  "IQ": { theme: "History", color: "#6B9BFF" },         // Iraq
+  "IE": { theme: "History", color: "#6B9BFF" },         // Ireland
+  "IM": { theme: "History", color: "#6B9BFF" },         // Isle of Man
+  "IL": { theme: "History", color: "#6B9BFF" },         // Israel
+  "IT": { theme: "History", color: "#6B9BFF" },         // Italy
+  "JM": { theme: "Beach", color: "#5DADE2" },           // Jamaica
+  "JP": { theme: "Culture", color: "#FFCE56" },         // Japan
+  "JE": { theme: "History", color: "#6B9BFF" },         // Jersey
+  "JO": { theme: "History", color: "#6B9BFF" },         // Jordan
+  "KZ": { theme: "Adventure", color: "#FF6B6B" },       // Kazakhstan
+  "KE": { theme: "Wildlife", color: "#52BE80" },        // Kenya
+  "KI": { theme: "Beach", color: "#5DADE2" },           // Kiribati
+  "KP": { theme: "History", color: "#6B9BFF" },         // North Korea
+  "KR": { theme: "Culture", color: "#FFCE56" },         // South Korea
+  "KW": { theme: "Luxury", color: "#D4AF37" },          // Kuwait
+  "KG": { theme: "Adventure", color: "#FF6B6B" },       // Kyrgyzstan
+  "LA": { theme: "Spirituality", color: "#D8BFD8" },    // Laos
+  "LV": { theme: "History", color: "#6B9BFF" },         // Latvia
+  "LB": { theme: "History", color: "#6B9BFF" },         // Lebanon
+  "LS": { theme: "Wildlife", color: "#52BE80" },        // Lesotho
+  "LR": { theme: "Nature", color: "#58D68D" },          // Liberia
+  "LY": { theme: "History", color: "#6B9BFF" },         // Libya
+  "LI": { theme: "History", color: "#6B9BFF" },         // Liechtenstein
+  "LT": { theme: "History", color: "#6B9BFF" },         // Lithuania
+  "LU": { theme: "History", color: "#6B9BFF" },         // Luxembourg
+  "MO": { theme: "Shopping", color: "#FF69B4" },        // Macau
+  "MG": { theme: "Nature", color: "#58D68D" },          // Madagascar
+  "MW": { theme: "Wildlife", color: "#52BE80" },        // Malawi
+  "MY": { theme: "Food", color: "#FFA07A" },            // Malaysia
+  "MV": { theme: "Beach", color: "#5DADE2" },           // Maldives
+  "ML": { theme: "Culture", color: "#FFCE56" },         // Mali
+  "MT": { theme: "History", color: "#6B9BFF" },         // Malta
+  "MH": { theme: "Beach", color: "#5DADE2" },           // Marshall Islands
+  "MR": { theme: "Culture", color: "#FFCE56" },         // Mauritania
+  "MU": { theme: "Beach", color: "#5DADE2" },           // Mauritius
+  "MX": { theme: "Food", color: "#FFA07A" },            // Mexico
+  "FM": { theme: "Beach", color: "#5DADE2" },           // Micronesia
+  "MD": { theme: "History", color: "#6B9BFF" },         // Moldova
+  "MC": { theme: "Luxury", color: "#D4AF37" },          // Monaco
+  "MN": { theme: "Adventure", color: "#FF6B6B" },       // Mongolia
+  "ME": { theme: "History", color: "#6B9BFF" },         // Montenegro
+  "MS": { theme: "Beach", color: "#5DADE2" },           // Montserrat
+  "MA": { theme: "Culture", color: "#FFCE56" },         // Morocco
+  "MZ": { theme: "Nature", color: "#58D68D" },          // Mozambique
+  "MM": { theme: "Spirituality", color: "#D8BFD8" },    // Myanmar
+  "NA": { theme: "Wildlife", color: "#52BE80" },        // Namibia
+  "NR": { theme: "Beach", color: "#5DADE2" },           // Nauru
+  "NP": { theme: "Spirituality", color: "#D8BFD8" },    // Nepal
+  "NL": { theme: "History", color: "#6B9BFF" },         // Netherlands
+  "NC": { theme: "Nature", color: "#58D68D" },          // New Caledonia
+  "NZ": { theme: "Adventure", color: "#FF6B6B" },       // New Zealand
+  "NI": { theme: "Nature", color: "#58D68D" },          // Nicaragua
+  "NE": { theme: "Culture", color: "#FFCE56" },         // Niger
+  "NG": { theme: "Culture", color: "#FFCE56" },         // Nigeria
+  "NU": { theme: "Beach", color: "#5DADE2" },           // Niue
+  "NF": { theme: "Beach", color: "#5DADE2" },           // Norfolk Island
+  "MP": { theme: "Beach", color: "#5DADE2" },           // Northern Mariana Islands
+  "NO": { theme: "Nature", color: "#58D68D" },          // Norway
+  "OM": { theme: "Adventure", color: "#FF6B6B" },       // Oman
+  "PK": { theme: "Adventure", color: "#FF6B6B" },       // Pakistan
+  "PW": { theme: "Beach", color: "#5DADE2" },           // Palau
+  "PS": { theme: "History", color: "#6B9BFF" },         // Palestine
+  "PA": { theme: "Nature", color: "#58D68D" },          // Panama
+  "PG": { theme: "Nature", color: "#58D68D" },          // Papua New Guinea
+  "PY": { theme: "Nature", color: "#58D68D" },          // Paraguay
+  "PE": { theme: "History", color: "#6B9BFF" },         // Peru
+  "PH": { theme: "Beach", color: "#5DADE2" },           // Philippines
+  "PL": { theme: "History", color: "#6B9BFF" },         // Poland
+  "PT": { theme: "History", color: "#6B9BFF" },         // Portugal
+  "PR": { theme: "Beach", color: "#5DADE2" },           // Puerto Rico
+  "QA": { theme: "Luxury", color: "#D4AF37" },          // Qatar
+  "RO": { theme: "History", color: "#6B9BFF" },         // Romania
+  "RU": { theme: "History", color: "#6B9BFF" },         // Russia
+  "RW": { theme: "Nature", color: "#58D68D" },          // Rwanda
+  "RE": { theme: "Beach", color: "#5DADE2" },           // Réunion
+  "BL": { theme: "Beach", color: "#5DADE2" },           // Saint Barthélemy
+  "SH": { theme: "Adventure", color: "#FF6B6B" },       // Saint Helena
+  "KN": { theme: "Beach", color: "#5DADE2" },           // Saint Kitts and Nevis
+  "LC": { theme: "Beach", color: "#5DADE2" },           // Saint Lucia
+  "MF": { theme: "Beach", color: "#5DADE2" },           // Saint Martin
+  "PM": { theme: "History", color: "#6B9BFF" },         // Saint Pierre and Miquelon
+  "VC": { theme: "Beach", color: "#5DADE2" },           // Saint Vincent and the Grenadines
+  "WS": { theme: "Beach", color: "#5DADE2" },           // Samoa
+  "SM": { theme: "History", color: "#6B9BFF" },         // San Marino
+  "ST": { theme: "Nature", color: "#58D68D" },          // São Tomé and Príncipe
+  "SA": { theme: "History", color: "#6B9BFF" },         // Saudi Arabia
+  "SN": { theme: "Culture", color: "#FFCE56" },         // Senegal
+  "RS": { theme: "History", color: "#6B9BFF" },         // Serbia
+  "SC": { theme: "Beach", color: "#5DADE2" },           // Seychelles
+  "SL": { theme: "Nature", color: "#58D68D" },          // Sierra Leone
+  "SG": { theme: "Shopping", color: "#FF69B4" },        // Singapore
+  "SX": { theme: "Beach", color: "#5DADE2" },           // Sint Maarten
+  "SK": { theme: "History", color: "#6B9BFF" },         // Slovakia
+  "SI": { theme: "History", color: "#6B9BFF" },         // Slovenia
+  "SB": { theme: "Nature", color: "#58D68D" },          // Solomon Islands
+  "SO": { theme: "Culture", color: "#FFCE56" },         // Somalia
+  "ZA": { theme: "Wildlife", color: "#52BE80" },        // South Africa
+  "GS": { theme: "Adventure", color: "#FF6B6B" },       // South Georgia and the South Sandwich Islands
+  "SS": { theme: "Nature", color: "#58D68D" },          // South Sudan
+  "ES": { theme: "History", color: "#6B9BFF" },         // Spain
+  "LK": { theme: "Beach", color: "#5DADE2" },           // Sri Lanka
+  "SD": { theme: "History", color: "#6B9BFF" },         // Sudan
+  "SR": { theme: "Nature", color: "#58D68D" },          // Suriname
+  "SJ": { theme: "Nature", color: "#58D68D" },          // Svalbard and Jan Mayen
+  "SZ": { theme: "Wildlife", color: "#52BE80" },        // Eswatini
+  "SE": { theme: "Nature", color: "#58D68D" },          // Sweden
+  "CH": { theme: "History", color: "#6B9BFF" },         // Switzerland
+  "SY": { theme: "History", color: "#6B9BFF" },         // Syria
+  "TW": { theme: "Culture", color: "#FFCE56" },         // Taiwan
+  "TJ": { theme: "Adventure", color: "#FF6B6B" },       // Tajikistan
+  "TZ": { theme: "Wildlife", color: "#52BE80" },        // Tanzania
+  "TH": { theme: "Culture", color: "#FFCE56" },         // Thailand
+  "TL": { theme: "Beach", color: "#5DADE2" },           // Timor-Leste
+  "TG": { theme: "Culture", color: "#FFCE56" },         // Togo
+  "TK": { theme: "Beach", color: "#5DADE2" },           // Tokelau
+  "TO": { theme: "Beach", color: "#5DADE2" },           // Tonga
+  "TT": { theme: "Culture", color: "#FFCE56" },         // Trinidad and Tobago
+  "TN": { theme: "History", color: "#6B9BFF" },         // Tunisia
+  "TR": { theme: "Culture", color: "#FFCE56" },         // Turkey
+  "TM": { theme: "Adventure", color: "#FF6B6B" },       // Turkmenistan
+  "TC": { theme: "Beach", color: "#5DADE2" },           // Turks and Caicos Islands
+  "TV": { theme: "Beach", color: "#5DADE2" },           // Tuvalu
+  "UG": { theme: "Wildlife", color: "#52BE80" },        // Uganda
+  "UA": { theme: "History", color: "#6B9BFF" },         // Ukraine
+  "AE": { theme: "Luxury", color: "#D4AF37" },          // United Arab Emirates
+  "GB": { theme: "History", color: "#6B9BFF" },         // United Kingdom
+  "US": { theme: "Culture", color: "#FFCE56" },         // United States
+  "UY": { theme: "Nature", color: "#58D68D" },          // Uruguay
+  "UZ": { theme: "Adventure", color: "#FF6B6B" },       // Uzbekistan
+  "VU": { theme: "Beach", color: "#5DADE2" },           // Vanuatu
+  "VE": { theme: "Nature", color: "#58D68D" },          // Venezuela
+  "VN": { theme: "Culture", color: "#FFCE56" },         // Vietnam
+  "WF": { theme: "Beach", color: "#5DADE2" },           // Wallis and Futuna
+  "EH": { theme: "History", color: "#6B9BFF" },         // Western Sahara
+  "YE": { theme: "History", color: "#6B9BFF" },         // Yemen
+  "ZM": { theme: "Wildlife", color: "#52BE80" },        // Zambia
+  "ZW": { theme: "Wildlife", color: "#52BE80" }         // Zimbabwe
+};
+
+  // Load ranked interests from localStorage
+const rankedInterests = JSON.parse(localStorage.getItem("rankedInterests")) || [];
+const countries = [
+  { code: "FR", name: "France", interests: ["History", "Food", "Shopping"], lat: 46.2276, long: 2.2137 },
+  { code: "IT", name: "Italy", interests: ["History", "Food", "Nature"], lat: 41.8719, long: 12.5674 },
+  { code: "US", name: "USA", interests: ["Adventure", "Shopping", "Nature"], lat: 37.0902, long: -95.7129 },
+  { code: "TH", name: "Thailand", interests: ["Adventure", "Food", "Nature"], lat: 15.8700, long: 100.9925 },
+  { code: "JP", name: "Japan", interests: ["Food", "History", "Shopping"], lat: 36.2048, long: 138.2529 },
+  { code: "ES", name: "Spain", interests: ["History", "Food", "Adventure"], lat: 40.4637, long: -3.7492 },
+  { code: "GR", name: "Greece", interests: ["History", "Nature", "Food"], lat: 39.0742, long: 21.8243 },
+  { code: "AU", name: "Australia", interests: ["Adventure", "Nature", "Shopping"], lat: -25.2744, long: 133.7751 },
+  { code: "UK", name: "United Kingdom", interests: ["History", "Shopping"], lat: 55.3781, long: -3.4360 },
+  { code: "DE", name: "Germany", interests: ["History", "Food", "Shopping"], lat: 51.1657, long: 10.4515 },
+  { code: "CN", name: "China", interests: ["History", "Food"], lat: 35.8617, long: 104.1954 },
+  { code: "IN", name: "India", interests: ["History", "Food", "Shopping"], lat: 20.5937, long: 78.9629 },
+  { code: "BR", name: "Brazil", interests: ["Adventure", "Nature"], lat: -14.2350, long: -51.9253 },
+  { code: "MX", name: "Mexico", interests: ["History", "Food"], lat: 23.6345, long: -102.5528 },
+  { code: "CA", name: "Canada", interests: ["Nature", "Adventure", "Shopping"], lat: 56.1304, long: -106.3468 },
+  { code: "NL", name: "Netherlands", interests: ["History", "Shopping"], lat: 52.1326, long: 5.2913 },
+  { code: "RU", name: "Russia", interests: ["History", "Shopping"], lat: 61.5240, long: 105.3188 },
+  { code: "SA", name: "Saudi Arabia", interests: ["History", "Adventure"], lat: 23.8859, long: 45.0792 },
+  { code: "AE", name: "United Arab Emirates", interests: ["Shopping", "Adventure"], lat: 23.4241, long: 53.8478 },
+  { code: "PT", name: "Portugal", interests: ["History", "Food"], lat: 39.3999, long: -8.2245 },
+  { code: "VN", name: "Vietnam", interests: ["History", "Food", "Nature"], lat: 14.0583, long: 108.2772 },
+  { code: "KR", name: "South Korea", interests: ["Shopping", "Food"], lat: 35.9078, long: 127.7669 },
+  { code: "EG", name: "Egypt", interests: ["History", "Adventure"], lat: 26.8206, long: 30.8025 },
+  { code: "AT", name: "Austria", interests: ["History", "Nature"], lat: 47.5162, long: 14.5501 },
+  { code: "CH", name: "Switzerland", interests: ["Nature", "Adventure", "Shopping"], lat: 46.8182, long: 8.2275 },
+  { code: "SE", name: "Sweden", interests: ["Nature", "Adventure"], lat: 60.1282, long: 18.6435 },
+  { code: "NO", name: "Norway", interests: ["Nature", "Adventure"], lat: 60.4720, long: 8.4689 },
+  { code: "FI", name: "Finland", interests: ["Nature", "Adventure"], lat: 61.9241, long: 25.7482 },
+  { code: "BE", name: "Belgium", interests: ["History", "Food", "Shopping"], lat: 50.8503, long: 4.3517 },
+  { code: "CZ", name: "Czech Republic", interests: ["History", "Food"], lat: 49.8175, long: 15.4730 },
+  { code: "HU", name: "Hungary", interests: ["History", "Food"], lat: 47.1625, long: 19.5033 },
+  { code: "NZ", name: "New Zealand", interests: ["Adventure", "Nature"], lat: -40.9006, long: 174.8860 },
+  { code: "CL", name: "Chile", interests: ["Nature", "Adventure"], lat: -35.6751, long: -71.5430 },
+  { code: "AR", name: "Argentina", interests: ["Adventure", "Nature", "Food"], lat: -38.4161, long: -63.6167 },
+  { code: "ZA", name: "South Africa", interests: ["Adventure", "Nature"], lat: -30.5595, long: 22.9375 },
+  { code: "ID", name: "Indonesia", interests: ["Adventure", "Nature", "Food"], lat: -0.7893, long: 113.9213 },
+  { code: "MY", name: "Malaysia", interests: ["Food", "Nature"], lat: 4.2105, long: 101.9758 },
+  { code: "SG", name: "Singapore", interests: ["Shopping", "Food"], lat: 1.3521, long: 103.8198 },
+  { code: "PH", name: "Philippines", interests: ["Adventure", "Nature"], lat: 12.8797, long: 121.7740 },
+  { code: "TR", name: "Turkey", interests: ["History", "Food"], lat: 38.9637, long: 35.2433 },
+  { code: "IL", name: "Israel", interests: ["History", "Food"], lat: 31.0461, long: 34.8516 },
+  { code: "JO", name: "Jordan", interests: ["History", "Adventure"], lat: 30.5852, long: 36.2384 },
+  { code: "LK", name: "Sri Lanka", interests: ["Nature", "Food"], lat: 7.8731, long: 80.7718 },
+  { code: "CO", name: "Colombia", interests: ["Adventure", "Nature"], lat: 4.5709, long: -74.2973 },
+  { code: "PE", name: "Peru", interests: ["History", "Adventure", "Nature"], lat: -9.1900, long: -75.0152 },
+  { code: "IQ", name: "Iraq", interests: ["History"], lat: 33.2232, long: 43.6793 },
+  { code: "LB", name: "Lebanon", interests: ["History", "Food"], lat: 33.8547, long: 35.8623 },
+  { code: "DZ", name: "Algeria", interests: ["History", "Adventure"], lat: 28.0339, long: 1.6596 },
+  { code: "MA", name: "Morocco", interests: ["History", "Shopping"], lat: 31.7917, long: -7.0926 },
+  { code: "TN", name: "Tunisia", interests: ["History"], lat: 33.8869, long: 9.5375 },
+  { code: "IS", name: "Iceland", interests: ["Nature", "Adventure"], lat: 64.9631, long: -19.0208 },
+  { code: "KE", name: "Kenya", interests: ["Adventure", "Nature"], lat: -0.0236, long: 37.9062 },
+  { code: "TZ", name: "Tanzania", interests: ["Adventure", "Nature"], lat: -6.3690, long: 34.8888 },
+  { code: "NG", name: "Nigeria", interests: ["Shopping"], lat: 9.0820, long: 8.6753 },
+  { code: "UA", name: "Ukraine", interests: ["History"], lat: 48.3794, long: 31.1656 },
+];
+
+
+    function getWeightedRecommendations(rankedInterests, countries, topN = 5) {
+  const weights = {};
+  for (let i = 0; i < rankedInterests.length; i++) {
+    weights[rankedInterests[i]] = rankedInterests.length - i;
+  }
+
+  const scoredCountries = countries.map(country => {
+    let score = 0;
+    country.interests.forEach(interest => {
+      if (weights[interest]) score += weights[interest];
+    });
+    return { ...country, score };
+  });
+
+  scoredCountries.sort((a, b) => b.score - a.score);
+  return scoredCountries.filter(c => c.score > 0).slice(0, topN);
+}
+
+const recommendations = getWeightedRecommendations(rankedInterests, countries, 5);
+const listEl = document.getElementById("top-choice-list");
+
+listEl.innerHTML = recommendations.length === 0
+  ? "<li>Please rank your interests first on the Interests page.</li>"
+  : recommendations.map(c => `<li><strong>${c.name}</strong> (Match score: ${c.score})</li>`).join("");
+
+    
+    am5.ready(function () {
+      var root = am5.Root.new("chartdiv");
+
+      root.setThemes([am5themes_Animated.new(root)]);
+
+      var chart = root.container.children.push(am5map.MapChart.new(root, {
+        panX: "none",
+        panY: "none",
+        wheelY: "none",
+        projection: am5map.geoMercator()
+      }));
+
+      var polygonSeries = chart.series.push(
+        am5map.MapPolygonSeries.new(root, {
+          geoJSON: am5geodata_worldLow,
+          exclude: ["AQ"]
+        })
+      );
+
+      polygonSeries.mapPolygons.template.setAll({
+        tooltipText: "{name}",
+        interactive: true
+      });
+
+      polygonSeries.mapPolygons.template.states.create("hover", {
+        fill: am5.color(0x677935)
+      });
+
+      polygonSeries.mapPolygons.template.events.on("pointerover", function (ev) {
+        const code = ev.target.dataItem.dataContext.id;
+        if (countryThemes[code]) {
+          document.getElementById("hover-box").innerText =
+            ev.target.dataItem.dataContext.name + ": " + countryThemes[code].theme;
+        }
+      });
+
+      polygonSeries.mapPolygons.template.events.on("pointerout", function () {
+        document.getElementById("hover-box").innerText =
+          "Hover over a country to see what it's known for!";
+      });
+
+      polygonSeries.mapPolygons.template.events.on("click", function (ev) {
+        const code = ev.target.dataItem.dataContext.id;
+        const name = ev.target.dataItem.dataContext.name;
+        if (countryThemes[code]) {
+          const confirmVisit = confirm(`Plan your visit to ${name} for a ${countryThemes[code].theme.toLowerCase()} experience?`);
+          if (confirmVisit) {
+            localStorage.setItem("selectedCountry", name);
+            localStorage.setItem("theme", countryThemes[code].theme);
+            window.location.href = "planner.html"; // next step: planner page
+          }
+        }
+      });
+
+      polygonSeries.mapPolygons.template.adapters.add("fill", function (fill, target) {
+        const code = target.dataItem.dataContext.id;
+        if (countryThemes[code]) {
+          return am5.color(countryThemes[code].color);
+        }
+        return fill;
+      });
+      // Create a MapPointSeries for pins
+    var pointSeries = chart.series.push(am5map.MapPointSeries.new(root, {}));
+
+    recommendations.forEach(country => {
+  pointSeries.data.push({
+    geometry: { type: "Point", coordinates: [country.long, country.lat] },
+    name: country.name,
+    theme: countryThemes[country.code] ? countryThemes[country.code].theme : "Unknown"
+  });
+});
+
+console.log("Top Pins Plotted:", recommendations.map(r => r.name));
+
+
+// Configure pins (circles or use custom icons)
+pointSeries.bullets.push(function () {
+  return am5.Bullet.new(root, {
+    sprite: am5.Picture.new(root, {
+      width: 24,
+      height: 24,
+      centerX: am5.p50,
+      centerY: am5.p50,
+      tooltipText: "{name}\nTop Interest: {theme}",
+      src: "assets/pinicon.png"  // Adjust path if your image is elsewhere
+    })
+  });
+});
+
+
+      
+    });
+  
+</script>
+
+
+  <!-- Place this right under your map container -->
+<div style="width: 100%; max-width: 800px; margin: 20px auto; height: 350px;">
+  <canvas id="touristBarChart"></canvas>
+</div>
+
+<!-- Chart.js library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Your existing theme mapping
+  const topcountryThemes = {
+    "FR": { theme: "History", color: "#6B9BFF" },
+    "ES": { theme: "Adventure", color: "#FF6B6B" },
+    "US": { theme: "Adventure", color: "#FF6B6B" },
+    "CN": { theme: "Culture", color: "#FFCE56" },
+    "IT": { theme: "Food", color: "#FFA07A" },
+    "MX": { theme: "Nature", color: "#58D68D" },
+    "TH": { theme: "Nature", color: "#58D68D" },
+    "DE": { theme: "History", color: "#6B9BFF" },
+    "GB": { theme: "History", color: "#6B9BFF" },
+    "JP": { theme: "Culture", color: "#FFCE56" },
+    "TR": { theme: "History", color: "#6B9BFF" },
+    "AU": { theme: "Nature", color: "#58D68D" },
+    "GR": { theme: "History", color: "#6B9BFF" },
+    "CA": { theme: "Nature", color: "#58D68D" },
+    "RU": { theme: "History", color: "#6B9BFF" },
+    "NL": { theme: "Adventure", color: "#FF6B6B" },
+    "SA": { theme: "Adventure", color: "#FF6B6B" },
+    "PT": { theme: "History", color: "#6B9BFF" },
+    "IE": { theme: "Nature", color: "#58D68D" },
+    "EG": { theme: "History", color: "#6B9BFF" }
+  };
+
+  const topTouristDestinations = [
+    { countryCode: "FR", country: "France", visitors: 89.4 },
+    { countryCode: "ES", country: "Spain", visitors: 82.8 },
+    { countryCode: "US", country: "USA", visitors: 79.6 },
+    { countryCode: "CN", country: "China", visitors: 65.7 },
+    { countryCode: "IT", country: "Italy", visitors: 58.3 },
+    { countryCode: "MX", country: "Mexico", visitors: 45.0 },
+    { countryCode: "TH", country: "Thailand", visitors: 39.8 },
+    { countryCode: "DE", country: "Germany", visitors: 38.9 },
+    { countryCode: "GB", country: "United Kingdom", visitors: 36.3 },
+    { countryCode: "JP", country: "Japan", visitors: 31.2 },
+    { countryCode: "TR", country: "Turkey", visitors: 29.1 },
+    { countryCode: "AU", country: "Australia", visitors: 25.5 },
+    { countryCode: "GR", country: "Greece", visitors: 24.7 },
+    { countryCode: "CA", country: "Canada", visitors: 22.1 },
+    { countryCode: "RU", country: "Russia", visitors: 21.9 },
+    { countryCode: "NL", country: "Netherlands", visitors: 20.5 },
+    { countryCode: "SA", country: "Saudi Arabia", visitors: 19.8 },
+    { countryCode: "PT", country: "Portugal", visitors: 18.3 },
+    { countryCode: "IE", country: "Ireland", visitors: 17.9 },
+    { countryCode: "EG", country: "Egypt", visitors: 16.5 }
+  ];
+
+  const ctx = document.getElementById('touristBarChart').getContext('2d');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: topTouristDestinations.map(d => d.country),
+      datasets: [{
+        label: 'Visitors (millions)',
+        data: topTouristDestinations.map(d => d.visitors),
+        backgroundColor: topTouristDestinations.map(d =>
+          topcountryThemes[d.countryCode]?.color || '#888'),
+        borderRadius: 6,
+        maxBarThickness: 30
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,     // Let container height control chart height
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.parsed.y}M visitors`,
+            title: ctx => {
+              const code = topTouristDestinations[ctx[0].dataIndex].countryCode;
+              return `${ctx[0].label} — ${topcountryThemes[code]?.theme || ''}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { maxRotation: 40, minRotation: 40, font: { size: 12 } }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: '#eee' },
+          title: { display: true, text: 'Millions of Visitors' }
+        }
+      }
+    }
+  });
+</script>
+
+
+
+
+</body>
+</html>

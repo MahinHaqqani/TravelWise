@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome to TravelWise</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: url('assets/travel-bg.jpg') no-repeat center center fixed;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .auth-container {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .toggle {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #007BFF;
+      cursor: pointer;
+    }
+
+    .google-btn {
+      background: #db4437;
+      color: white;
+      margin-top: 15px;
+    }
+
+    hr {
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <h2 id="formTitle">Login to TravelWise!</h2>
+
+    <div id="authForm">
+      <input type="text" id="nameField" placeholder="Full Name" style="display: none;">
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button onclick="handleAuth()">Login</button>
+    </div>
+
+    <div class="toggle" onclick="toggleMode()">Don't have an account? Sign up</div>
+
+    <hr>
+    <button class="google-btn" onclick="googleSignIn()">Sign in with Google</button>
+    <button onclick="continueAsGuest()">Continue as Guest</button>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signInWithPopup,
+      GoogleAuthProvider
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcNHr2Em_tPYwiasw7L1ayQ7hHCnDaYhc",
+      authDomain: "tripgenie-6fb92.firebaseapp.com",
+      projectId: "tripgenie-6fb92",
+      storageBucket: "tripgenie-6fb92.appspot.com",
+      messagingSenderId: "813945038133",
+      appId: "1:813945038133:web:e24a4aa31b101c9663587c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    let isSignup = false;
+
+    window.toggleMode = () => {
+      isSignup = !isSignup;
+      document.getElementById("formTitle").innerText = isSignup ? "Sign Up for Travel Planner" : "Login to Travel Planner";
+      document.querySelector("button").innerText = isSignup ? "Sign Up" : "Login";
+      document.getElementById("nameField").style.display = isSignup ? "block" : "none";
+      document.querySelector(".toggle").innerText = isSignup ? "Already have an account? Login" : "Don't have an account? Sign up";
+    };
+
+    window.handleAuth = () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const name = document.getElementById("nameField").value;
+
+      if (isSignup) {
+        createUserWithEmailAndPassword(auth, email, password)
+          .then(user => {
+            localStorage.setItem("loggedInUser", name || email);
+            alert("Signup successful. Now login.");
+            toggleMode();
+          })
+          .catch(err => alert(err.message));
+      } else {
+        signInWithEmailAndPassword(auth, email, password)
+          .then(user => {
+            localStorage.setItem("loggedInUser", email);
+            window.location.href = "interest.html";
+          })
+          .catch(err => alert("Login failed: " + err.message));
+      }
+    };
+
+    window.googleSignIn = () => {
+      signInWithPopup(auth, provider)
+  .then(result => {
+    const user = result.user;
+
+    // Store the user's display name instead of email
+    localStorage.setItem("justLoggedIn", "true");
+    localStorage.setItem("loggedInUser", user.displayName || "Guest");
+
+    window.location.href = "dashboard.html";
+  })
+  .catch(error => {
+    console.error("Google Sign-In failed:", error);
+    alert("Login failed. Please try again.");
+  });
+    };
+
+    window.continueAsGuest = () => {
+      localStorage.setItem("loggedInUser", "guest");
+      window.location.href = "interest.html";
+    };
+  </script>
+</body>
+</html>
