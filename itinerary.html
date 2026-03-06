@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    
   <meta charset="UTF-8">
   <title>Your Trip Itinerary</title>
   <style>
-    
     body {
       font-family: Arial, sans-serif;
       background: #f4f7fa;
@@ -13,9 +11,7 @@
       max-width: 800px;
       margin: auto;
     }
-    h1, h2 {
-      text-align: center;
-    }
+    h1, h2 { text-align: center; }
     iframe {
       width: 100%;
       height: 300px;
@@ -37,17 +33,14 @@
       color: #007BFF;
       text-decoration: none;
     }
-    a:hover {
-      text-decoration: underline;
-    }
+    a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
 
-
   <h1>Explore</h1>
 
-  <!-- Weather Section -->
+  <!-- Weather -->
   <div class="section">
     <h2>🌤️ Live Weather in <span id="destinationName"></span></h2>
     <p id="weather">Loading weather...</p>
@@ -55,7 +48,7 @@
 
   <!-- Map -->
   <div class="section">
-    <h2>🗘️ Map of Your Destination</h2>
+    <h2>🗺️ Map of Your Destination</h2>
     <iframe id="googleMap" loading="lazy" allowfullscreen></iframe>
   </div>
 
@@ -66,12 +59,11 @@
     <a id="flightLink" href="#" target="_blank">✈️ Find Flights</a>
   </div>
 
-  <!-- Itinerary Placeholder -->
+  <!-- Itinerary -->
   <div class="section">
     <h2>🗓️ Your Personalized Itinerary</h2>
     <ul id="tourPlanList" style="list-style: none; padding-left: 0;"></ul>
   </div>
-
 
   <!-- PDF Export -->
   <div class="section" style="text-align:center;">
@@ -79,15 +71,35 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
   </div>
 
-  <!-- JS Logic -->
+  <!-- Firebase v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
   <script>
-    const destination = localStorage.getItem("selectedCountry");
-    const startDate = new Date(localStorage.getItem("startDate"));
-    const endDate = new Date(localStorage.getItem("endDate"));
-    const origin = localStorage.getItem("origin");
+    /* =========================================================
+       FIREBASE INIT
+    ========================================================= */
+    firebase.initializeApp({
+      apiKey: "AIzaSyCcNHr2Em_tPYwiasw7L1ayQ7hHCnDaYhc",
+      authDomain: "tripgenie-6fb92.firebaseapp.com",
+      databaseURL: "https://tripgenie-6fb92-default-rtdb.firebaseio.com",
+      projectId: "tripgenie-6fb92",
+      storageBucket: "tripgenie-6fb92.appspot.com",
+      messagingSenderId: "813945038133",
+      appId: "1:813945038133:web:e24a4aa31b101c9663587c"
+    });
+    const db = firebase.database();
+
+    /* =========================================================
+       BASIC SETUP
+    ========================================================= */
+    const destination = localStorage.getItem("selectedCountry") || "India";
+    const origin      = localStorage.getItem("origin") || "";
+    const startDate   = new Date(localStorage.getItem("startDate"));
+    const endDate     = new Date(localStorage.getItem("endDate"));
     const rankedInterests = JSON.parse(localStorage.getItem("rankedInterests")) || ["Adventure", "History"];
 
-    document.getElementById("destinationName").innerText = destination || "your destination";
+    document.getElementById("destinationName").innerText = destination;
     document.getElementById("googleMap").src =
       `https://www.google.com/maps/embed/v1/place?key=AIzaSyC3EqY3CEG5rt6EJC4DIA1QAGhiZyEZLAM&q=${encodeURIComponent(destination)}`;
     document.getElementById("hotelLink").href =
@@ -95,338 +107,323 @@
     document.getElementById("flightLink").href =
       `https://www.skyscanner.com/transport/flights-from/${encodeURIComponent(origin)}/to/${encodeURIComponent(destination)}/`;
 
+    /* =========================================================
+       WEATHER
+    ========================================================= */
     fetch(`https://api.openweathermap.org/data/2.5/weather?q=${destination}&appid=5f9a500644e27825f0bfd75f230c1d22`)
-      .then(res => res.json())
-      .then(data => {
-        const temp = Math.round(data.main.temp - 273.15);
-        const desc = data.weather[0].description;
-        document.getElementById("weather").innerText = `${desc}, ${temp}°C`;
+      .then(r => r.json())
+      .then(d => {
+        const temp = Math.round(d.main.temp - 273.15);
+        document.getElementById("weather").innerText = `${d.weather[0].description}, ${temp}°C`;
       })
-      .catch(err => {
+      .catch(() => {
         document.getElementById("weather").innerText = "Weather data not available.";
-        console.error(err);
       });
 
-  
-
+    /* =========================================================
+       ITINERARY DATA
+    ========================================================= */
     const customItineraries = {
       "India": {
-        "Food": ["Delhi Street Food Tour", "Rajasthani Thali in Jaipur", "Hyderabadi Biryani hunt", "South Indian Breakfast Trail"],
-        "History": ["Red Fort, Delhi", "Amber Fort, Jaipur", "Gateway of India", "Ajanta Caves"],
+        "Food":      ["Delhi Street Food Tour", "Rajasthani Thali in Jaipur", "Hyderabadi Biryani hunt", "South Indian Breakfast Trail"],
+        "History":   ["Red Fort, Delhi", "Amber Fort, Jaipur", "Gateway of India", "Ajanta Caves"],
         "Adventure": ["River Rafting in Rishikesh", "Camel Safari in Jaisalmer", "Trekking in Himachal", "Camping in Spiti"],
-        "Nature": ["Backwaters of Kerala", "Tea Gardens of Munnar", "Valley of Flowers", "Sundarbans"],
-        "Shopping": ["Delhi's Chandni Chowk", "Mumbai Colaba Causeway", "Jaipur Bazaars", "Goa Flea Markets"]
+        "Nature":    ["Backwaters of Kerala", "Tea Gardens of Munnar", "Valley of Flowers", "Sundarbans"],
+        "Shopping":  ["Delhi's Chandni Chowk", "Mumbai Colaba Causeway", "Jaipur Bazaars", "Goa Flea Markets"]
       },
-  "United Arab Emirates": {
-    "Food": ["Dubai Marina Dining", "Street Eats in Deira", "Emirati Cuisine at Al Fanar", "Luxury Buffet at Atlantis"],
-    "History": ["Al Fahidi Historical District", "Louvre Abu Dhabi", "Sheikh Zayed Mosque", "Sharjah Heritage Area"],
-    "Adventure": ["Desert Safari", "Ziplining Jebel Jais", "Indoor Skiing", "Skydiving Dubai"],
-    "Nature": ["Hatta Dam", "Al Ain Oasis", "Mangrove National Park", "Ajman Beaches"],
-    "Shopping": ["Dubai Mall", "Gold Souk", "Abu Dhabi Malls", "Global Village"]
-  },
-  "France": {
-    "Food": ["Pastries in Paris", "Wine & Cheese in Bordeaux", "Crêpes in Brittany", "Michelin Dining in Lyon"],
-    "History": ["Palace of Versailles", "Notre-Dame Cathedral", "Louvre Museum", "Mont Saint-Michel"],
-    "Adventure": ["Alps Skiing", "Cycling Loire Valley", "Canoeing Dordogne", "Hiking Calanques"],
-    "Nature": ["Lavender Fields in Provence", "Gorges du Verdon", "Corsican Beaches", "Alps Viewpoints"],
-    "Shopping": ["Champs-Élysées", "Galeries Lafayette", "Le Marais Boutiques", "Nice Street Markets"]
-  },
-  "Italy": {
-    "Food": ["Pizza in Naples", "Pasta in Rome", "Gelato in Florence", "Risotto in Milan"],
-    "History": ["Colosseum", "Vatican Museums", "Pompeii", "Florence Duomo"],
-    "Adventure": ["Hiking Cinque Terre", "Skiing in Dolomites", "Venice Kayaking", "Tuscany Bike Tour"],
-    "Nature": ["Lakes of Como", "Amalfi Coast", "Dolomites", "Sardinian Beaches"],
-    "Shopping": ["Via del Corso, Rome", "Milan Fashion District", "Florence Leather Markets", "Venice Souvenirs"]
-  },
-  "Japan": {
-    "Food": ["Sushi in Tokyo", "Ramen Street in Kyoto", "Okonomiyaki in Osaka", "Street Food in Fukuoka"],
-    "History": ["Fushimi Inari Shrine", "Nijo Castle", "Himeji Castle", "Atomic Dome Hiroshima"],
-    "Adventure": ["Mt. Fuji Climb", "Snowboarding in Hokkaido", "Theme Parks", "Bamboo Grove Trek"],
-    "Nature": ["Cherry Blossoms in Ueno", "Arashiyama Bamboo Forest", "Nikko Mountains", "Okinawa Beaches"],
-    "Shopping": ["Akihabara Tokyo", "Dotonbori Osaka", "Shibuya", "Harajuku"]
-  },
-  "Egypt": {
-    "Food": ["Koshari in Cairo", "Alexandrian Seafood", "Traditional Mezze", "Nile Dinner Cruise"],
-    "History": ["Giza Pyramids", "Valley of the Kings", "Karnak Temple", "Egyptian Museum"],
-    "Adventure": ["Desert Safari", "Nile River Cruise", "Diving in Red Sea", "Mount Sinai Climb"],
-    "Nature": ["Siwa Oasis", "White Desert", "Red Sea Coral Reefs", "Aswan"],
-    "Shopping": ["Khan El Khalili Bazaar", "Luxor Souks", "Cairo Malls", "Aswan Markets"]
-  },
-  "Russia": {
-    "Food": ["Borscht & Blinis", "Russian High Tea", "Pelmeni Sampling", "Caviar & Vodka"],
-    "History": ["Kremlin", "Hermitage Museum", "Red Square", "St. Basil's Cathedral"],
-    "Adventure": ["Trans-Siberian Train", "Lake Baikal Trek", "Altai Mountains", "Northern Lights"],
-    "Nature": ["Volga River", "Kamchatka Peninsula", "Lake Baikal", "Caucasus Mountains"],
-    "Shopping": ["GUM Moscow", "St. Petersburg Boutiques", "Russian Handicrafts", "Arbat Street"]
-  },
-  "United Kingdom": {
-    "Food": ["Fish & Chips", "Afternoon Tea", "Scottish Breakfast", "Pub Hopping"],
-    "History": ["Tower of London", "Stonehenge", "Edinburgh Castle", "Bath Roman Baths"],
-    "Adventure": ["Hiking Scottish Highlands", "Surfing in Cornwall", "Lake District Trails", "Caving in Wales"],
-    "Nature": ["Lake District", "Snowdonia", "Isle of Skye", "Yorkshire Dales"],
-    "Shopping": ["Oxford Street", "Camden Market", "Edinburgh Royal Mile", "Liverpool One"]
-  }
-};
-
-  const pexelsApiKey = "pPMKuC7BHjrLNYcF2qTeDd0szwZ4t8ob0fhDZ59LOjIztemQBDUD1NcS"; // 🔁 Replace with your actual key
-
-  async function fetchImageFromPexels(query) {
-    try {
-      const response = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1`, {
-        headers: {
-          Authorization: pexelsApiKey
-        }
-      });
-      const data = await response.json();
-      return data.photos[0]?.src.medium || `https://via.placeholder.com/600x400?text=${encodeURIComponent(query)}`;
-    } catch (error) {
-      console.error("Image fetch failed:", error);
-      return `https://via.placeholder.com/600x400?text=${encodeURIComponent(query)}`;
-    }
-  }
-
-  async function generateCustomTour() {
-  const destination = localStorage.getItem("selectedCountry");
-  const startDate = new Date(localStorage.getItem("startDate"));
-  const endDate = new Date(localStorage.getItem("endDate"));
-  const rankedInterests = JSON.parse(localStorage.getItem("rankedInterests")) || ["Adventure", "History"];
-  const days = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-
-  const outputList = document.getElementById("tourPlanList");
-  outputList.innerHTML = "";
-
-  if (!customItineraries[destination]) {
-    outputList.innerHTML = `<li>🚧 Itinerary data not available for ${destination}. Try again later.</li>`;
-    return;
-  }
-
-  for (let i = 0; i < days; i++) {
-    const interest = rankedInterests[i % rankedInterests.length];
-    const activities = customItineraries[destination][interest];
-    const activity = activities ? activities[i % activities.length] : "Explore local area";
-    const activityId = activity.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, ""); // safe HTML ID
-
-    const searchLink = `https://www.google.com/maps/search/${encodeURIComponent(activity + ', ' + destination)}`;
-    const imageURL = await fetchImageFromPexels(`${activity} ${destination}`);
-
-    const li = document.createElement("li");
-    li.style.marginBottom = "20px";
-    li.innerHTML = `
-      <div style="border:1px solid #ddd; border-radius:10px; background:white;">
-        <img src="${imageURL}" alt="${activity}" style="width:100%; height:200px; object-fit:cover;">
-        <div style="padding:15px;">
-          <strong>Day ${i + 1}</strong> – <em>${interest}</em>: ${activity}<br>
-          <a href="${searchLink}" target="_blank">📍 View on Map</a>
-
-          <button onclick="toggleReviewForm('${activityId}')" style="margin-top: 10px; background-color: #2196F3; color: white; padding: 6px 12px; border: none; border-radius: 5px;">
-            ✍️ Write a Review
-          </button>
-
-          <div class="review-form" id="form-${activityId}" style="display:none; margin-top:10px;">
-            <textarea id="review-${activityId}" placeholder="Write your review..." style="width:100%; padding:8px; border-radius:5px;"></textarea>
-            <select id="rating-${activityId}" style="margin-top:5px; width:100%; padding:6px;">
-              <option value="5">⭐️⭐️⭐️⭐️⭐️</option>
-              <option value="4">⭐️⭐️⭐️⭐️</option>
-              <option value="3">⭐️⭐️⭐️</option>
-              <option value="2">⭐️⭐️</option>
-              <option value="1">⭐️</option>
-            </select>
-            <button onclick="submitUserReview('${activityId}')" style="margin-top: 8px;">Submit</button>
-          </div>
-
-          <div id="reviews-${activityId}" style="margin-top:15px;"></div>
-        </div>
-      </div>
-    `;
-
-    outputList.appendChild(li);
-    displayReviews(activityId);
-  }
-  const tripData = {
-  destination,
-  origin,
-  startDate: startDate.toISOString(),
-  endDate: endDate.toISOString(),
-  interests: rankedInterests,
-  timestamp: new Date().toISOString()
-};
-
-let history = JSON.parse(localStorage.getItem("recentTrips")) || [];
-history.unshift(tripData); // Add to top
-history = history.slice(0, 5); // Keep only last 5 trips
-localStorage.setItem("recentTrips", JSON.stringify(history));
-
-}
-
-  generateCustomTour();
-</script>
-</script>
-<!-- Firebase SDK (MUST be outside script tag) -->
-<!-- Include Firebase scripts FIRST -->
-<!-- ✅ Firebase v8 SDK -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-<!-- ✅ Review & Sentiment Logic -->
-<script>
-  // Initialize Firebase
-  const firebaseConfig = {
-    apiKey: "AIzaSyCcNHr2Em_tPYwiasw7L1ayQ7hHCnDaYhc",
-    authDomain: "tripgenie-6fb92.firebaseapp.com",
-    databaseURL: "https://tripgenie-6fb92-default-rtdb.firebaseio.com",
-    projectId: "tripgenie-6fb92",
-    storageBucket: "tripgenie-6fb92.appspot.com",
-    messagingSenderId: "813945038133",
-    appId: "1:813945038133:web:e24a4aa31b101c9663587c",
-    measurementId: "G-BJSFM382Y9"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  // Toggle review form visibility
-  function toggleReviewForm(activityId) {
-    const form = document.getElementById(`form-${activityId}`);
-    if (form) {
-      form.style.display = form.style.display === "none" ? "block" : "none";
-    }
-  }
-
-  // Submit a review
-  async function submitUserReview(activityId) {
-    const reviewText = document.getElementById(`review-${activityId}`).value;
-    const rating = document.getElementById(`rating-${activityId}`).value;
-
-    if (!reviewText.trim()) {
-      alert("Please write something.");
-      return;
-    }
-
-    const user = localStorage.getItem("loggedInUser") || "guest";
-
-    // Optional: Sentiment Analysis API
-    let sentiment = "neutral";
-try {
-  const response = await fetch("http://127.0.0.1:5000/sentiment", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: reviewText.trim() })
-  });
-
-  if (!response.ok) throw new Error(`Server error: ${response.status}`);
-
-  const result = await response.json();
-  const label = result?.label?.toLowerCase();
-
-  if (["positive", "neutral", "negative"].includes(label)) {
-    sentiment = label;
-  } else {
-    console.warn("Unexpected sentiment label:", label);
-  }
-
-} catch (err) {
-  console.warn("Sentiment API error:", err.message || err);
-}
-
-    const review = {
-      user,
-      text: reviewText,
-      rating: Number(rating),
-      timestamp: new Date().toISOString(),
-      sentiment,
-      activity: activityId
+      "United Arab Emirates": {
+        "Food":      ["Dubai Marina Dining", "Street Eats in Deira", "Emirati Cuisine at Al Fanar", "Luxury Buffet at Atlantis"],
+        "History":   ["Al Fahidi Historical District", "Louvre Abu Dhabi", "Sheikh Zayed Mosque", "Sharjah Heritage Area"],
+        "Adventure": ["Desert Safari", "Ziplining Jebel Jais", "Indoor Skiing", "Skydiving Dubai"],
+        "Nature":    ["Hatta Dam", "Al Ain Oasis", "Mangrove National Park", "Ajman Beaches"],
+        "Shopping":  ["Dubai Mall", "Gold Souk", "Abu Dhabi Malls", "Global Village"]
+      },
+      "France": {
+        "Food":      ["Pastries in Paris", "Wine & Cheese in Bordeaux", "Crêpes in Brittany", "Michelin Dining in Lyon"],
+        "History":   ["Palace of Versailles", "Notre-Dame Cathedral", "Louvre Museum", "Mont Saint-Michel"],
+        "Adventure": ["Alps Skiing", "Cycling Loire Valley", "Canoeing Dordogne", "Hiking Calanques"],
+        "Nature":    ["Lavender Fields in Provence", "Gorges du Verdon", "Corsican Beaches", "Alps Viewpoints"],
+        "Shopping":  ["Champs-Élysées", "Galeries Lafayette", "Le Marais Boutiques", "Nice Street Markets"]
+      },
+      "Italy": {
+        "Food":      ["Pizza in Naples", "Pasta in Rome", "Gelato in Florence", "Risotto in Milan"],
+        "History":   ["Colosseum", "Vatican Museums", "Pompeii", "Florence Duomo"],
+        "Adventure": ["Hiking Cinque Terre", "Skiing in Dolomites", "Venice Kayaking", "Tuscany Bike Tour"],
+        "Nature":    ["Lakes of Como", "Amalfi Coast", "Dolomites", "Sardinian Beaches"],
+        "Shopping":  ["Via del Corso, Rome", "Milan Fashion District", "Florence Leather Markets", "Venice Souvenirs"]
+      },
+      "Japan": {
+        "Food":      ["Sushi in Tokyo", "Ramen Street in Kyoto", "Okonomiyaki in Osaka", "Street Food in Fukuoka"],
+        "History":   ["Fushimi Inari Shrine", "Nijo Castle", "Himeji Castle", "Atomic Dome Hiroshima"],
+        "Adventure": ["Mt. Fuji Climb", "Snowboarding in Hokkaido", "Theme Parks", "Bamboo Grove Trek"],
+        "Nature":    ["Cherry Blossoms in Ueno", "Arashiyama Bamboo Forest", "Nikko Mountains", "Okinawa Beaches"],
+        "Shopping":  ["Akihabara Tokyo", "Dotonbori Osaka", "Shibuya", "Harajuku"]
+      },
+      "Egypt": {
+        "Food":      ["Koshari in Cairo", "Alexandrian Seafood", "Traditional Mezze", "Nile Dinner Cruise"],
+        "History":   ["Giza Pyramids", "Valley of the Kings", "Karnak Temple", "Egyptian Museum"],
+        "Adventure": ["Desert Safari", "Nile River Cruise", "Diving in Red Sea", "Mount Sinai Climb"],
+        "Nature":    ["Siwa Oasis", "White Desert", "Red Sea Coral Reefs", "Aswan"],
+        "Shopping":  ["Khan El Khalili Bazaar", "Luxor Souks", "Cairo Malls", "Aswan Markets"]
+      },
+      "Russia": {
+        "Food":      ["Borscht & Blinis", "Russian High Tea", "Pelmeni Sampling", "Caviar & Vodka"],
+        "History":   ["Kremlin", "Hermitage Museum", "Red Square", "St. Basil's Cathedral"],
+        "Adventure": ["Trans-Siberian Train", "Lake Baikal Trek", "Altai Mountains", "Northern Lights"],
+        "Nature":    ["Volga River", "Kamchatka Peninsula", "Lake Baikal", "Caucasus Mountains"],
+        "Shopping":  ["GUM Moscow", "St. Petersburg Boutiques", "Russian Handicrafts", "Arbat Street"]
+      },
+      "United Kingdom": {
+        "Food":      ["Fish & Chips", "Afternoon Tea", "Scottish Breakfast", "Pub Hopping"],
+        "History":   ["Tower of London", "Stonehenge", "Edinburgh Castle", "Bath Roman Baths"],
+        "Adventure": ["Hiking Scottish Highlands", "Surfing in Cornwall", "Lake District Trails", "Caving in Wales"],
+        "Nature":    ["Lake District", "Snowdonia", "Isle of Skye", "Yorkshire Dales"],
+        "Shopping":  ["Oxford Street", "Camden Market", "Edinburgh Royal Mile", "Liverpool One"]
+      }
     };
 
-    await db.ref(`reviews/${activityId}`).push(review);
+    /* =========================================================
+       IMAGE FETCH — Pexels with Picsum fallback
+    ========================================================= */
+    const pexelsApiKey = "pPMKuC7BHjrLNYcF2qTeDd0szwZ4t8ob0fhDZ59LOjIztemQBDUD1NcS";
 
-    document.getElementById(`review-${activityId}`).value = "";
-    document.getElementById(`rating-${activityId}`).value = "5";
-    document.getElementById(`form-${activityId}`).style.display = "none";
+    async function fetchImage(query) {
+      try {
+        const res = await fetch(
+          `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1`,
+          { headers: { Authorization: pexelsApiKey } }
+        );
+        const data = await res.json();
+        if (data.photos && data.photos.length > 0) {
+          return data.photos[0].src.medium;
+        }
+      } catch (e) {
+        // fall through to picsum
+      }
+      // Picsum is always reliable — uses activity name as seed for consistency
+      return `https://picsum.photos/seed/${encodeURIComponent(query)}/800/400`;
+    }
 
-    displayReviews(activityId);
-  }
+    /* =========================================================
+       TOGGLE REVIEW FORM
+    ========================================================= */
+    function toggleReviewForm(activityId) {
+      const form = document.getElementById(`form-${activityId}`);
+      if (form) form.style.display = form.style.display === "none" ? "block" : "none";
+    }
 
-  // Display all reviews
-  function displayReviews(activityId) {
-    const container = document.getElementById(`reviews-${activityId}`);
-    const dbRef = db.ref(`reviews/${activityId}`);
+    /* =========================================================
+       SUBMIT REVIEW
+    ========================================================= */
+    async function submitUserReview(activityId) {
+      const reviewEl = document.getElementById(`review-${activityId}`);
+      const ratingEl = document.getElementById(`rating-${activityId}`);
 
-    dbRef.on("value", (snapshot) => {
-      const data = snapshot.val();
-      if (!data) {
-        container.innerHTML = "<p>No reviews yet.</p>";
+      if (!reviewEl || !ratingEl) {
+        alert("Review form not found.");
         return;
       }
 
-      const allReviews = Object.values(data);
-      const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
+      const text   = reviewEl.value.trim();
+      const rating = Number(ratingEl.value);
 
-      allReviews.forEach((r) => {
-        if (r.sentiment in sentimentCounts) {
-          sentimentCounts[r.sentiment]++;
-        }
-      });
-
-      let overallSentiment = "Neutral";
-      let icon = "😐";
-      if (
-        sentimentCounts.positive > sentimentCounts.neutral &&
-        sentimentCounts.positive > sentimentCounts.negative
-      ) {
-        overallSentiment = "Positive";
-        icon = "😊";
-      } else if (
-        sentimentCounts.negative > sentimentCounts.neutral &&
-        sentimentCounts.negative > sentimentCounts.positive
-      ) {
-        overallSentiment = "Negative";
-        icon = "😞";
+      if (!text) {
+        alert("Please write something before submitting.");
+        return;
       }
 
-      container.innerHTML = `
-        <div style="background:#fff5c4;padding:10px;border-radius:8px;margin-bottom:10px;">
-          <strong>Overall Sentiment:</strong> <span style="font-size: 20px;">${icon} ${overallSentiment}</span>
-        </div>
-      `;
+      const user = localStorage.getItem("loggedInUser") || "guest";
 
-      container.innerHTML += allReviews.map((r) => `
-        <div style="background:#f9f9f9;padding:10px;border-radius:8px;margin:10px 0;">
-          <strong>${r.user}</strong> <span style="color:#666">(${new Date(r.timestamp).toLocaleString()})</span><br>
-          <span style="color:gold;">${"⭐️".repeat(r.rating)}</span><br>
-          <span style="background:#ccc; padding:2px 6px; border-radius:4px;">${r.sentiment}</span>
-          <p>${r.text}</p>
-        </div>
-      `).join("");
-    });
-  }
-</script>
-<script>
-function downloadPDF() {
-  const itinerarySection = document.querySelector(".section:nth-of-type(4)");
+      // Optional sentiment (Flask)
+      let sentiment = "neutral";
+      try {
+        const res = await fetch("http://127.0.0.1:5000/sentiment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+        if (res.ok) {
+          const result = await res.json();
+          const label = result?.label?.toLowerCase();
+          if (["positive", "neutral", "negative"].includes(label)) sentiment = label;
+        }
+      } catch (e) {
+        // Flask not running — default neutral, carry on
+      }
 
+      try {
+        await db.ref(`reviews/${activityId}`).push({
+          user, text, rating, sentiment,
+          timestamp: new Date().toISOString(),
+          activity: activityId
+        });
 
-  const images = itinerarySection.querySelectorAll("img");
-  const imagePromises = Array.from(images).map(img => {
-    if (!img.complete) {
-      return new Promise(resolve => {
-        img.onload = resolve;
-        img.onerror = resolve;
+        reviewEl.value = "";
+        ratingEl.value = "5";
+        document.getElementById(`form-${activityId}`).style.display = "none";
+        // displayReviews already listening via .on() — no manual refresh needed
+      } catch (err) {
+        console.error("❌ Failed to save review:", err);
+        alert("Failed to submit review. Check console.");
+      }
+    }
+
+    /* =========================================================
+       DISPLAY REVIEWS (realtime listener)
+    ========================================================= */
+    function displayReviews(activityId) {
+      const container = document.getElementById(`reviews-${activityId}`);
+      if (!container) return;
+
+      db.ref(`reviews/${activityId}`).on("value", snapshot => {
+        const data = snapshot.val();
+
+        if (!data) {
+          container.innerHTML = "<p style='color:#888;'>No reviews yet. Be the first!</p>";
+          return;
+        }
+
+        const allReviews = Object.values(data);
+        const counts = { positive: 0, neutral: 0, negative: 0 };
+        allReviews.forEach(r => { if (r.sentiment in counts) counts[r.sentiment]++; });
+
+        let overallSentiment = "Neutral", icon = "😐";
+        if (counts.positive > counts.neutral && counts.positive > counts.negative) { overallSentiment = "Positive"; icon = "😊"; }
+        else if (counts.negative > counts.neutral && counts.negative > counts.positive) { overallSentiment = "Negative"; icon = "😞"; }
+
+        container.innerHTML = `
+          <div style="background:#fff5c4;padding:10px;border-radius:8px;margin-bottom:10px;">
+            <strong>Overall Sentiment:</strong> <span style="font-size:20px;">${icon} ${overallSentiment}</span>
+          </div>
+          ${allReviews.map(r => `
+            <div style="background:#f9f9f9;padding:10px;border-radius:8px;margin:8px 0;">
+              <strong>${r.user}</strong>
+              <span style="color:#999;font-size:12px;"> · ${new Date(r.timestamp).toLocaleString()}</span><br>
+              <span style="color:gold;">${"⭐️".repeat(r.rating)}</span>
+              <span style="background:#ddd;padding:2px 8px;border-radius:4px;font-size:12px;margin-left:6px;">${r.sentiment}</span>
+              <p style="margin:6px 0 0;">${r.text}</p>
+            </div>
+          `).join("")}
+        `;
       });
     }
-    return Promise.resolve();
-  });
 
-  Promise.all(imagePromises).then(() => {
-    html2pdf().from(itinerarySection).set({
-      margin: 0.5,
-      filename: "Travel_Itinerary.pdf",
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "in", format: "letter", orientation: "portrait" }
-    }).save();
-  });
-}
-</script>
+    /* =========================================================
+       GENERATE TOUR
+    ========================================================= */
+    async function generateCustomTour() {
+      const days = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+      const outputList = document.getElementById("tourPlanList");
+      outputList.innerHTML = "";
 
+      if (!customItineraries[destination]) {
+        outputList.innerHTML = `<li>🚧 Itinerary not available for ${destination}.</li>`;
+        return;
+      }
+
+      // STEP 1: Build all DOM nodes first (no innerHTML +=)
+      const allActivityIds = [];
+
+      for (let i = 0; i < days; i++) {
+        const interest  = rankedInterests[i % rankedInterests.length];
+        const activities = customItineraries[destination][interest];
+        const activity  = activities ? activities[i % activities.length] : "Explore Local Area";
+        const activityId = activity.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+
+        const searchLink = `https://www.google.com/maps/search/${encodeURIComponent(activity + ", " + destination)}`;
+        const seed       = encodeURIComponent(activity);
+        const picsum     = `https://picsum.photos/seed/${seed}/800/400`;
+
+        const li = document.createElement("li");
+        li.style.marginBottom = "20px";
+        li.innerHTML = `
+          <div style="border:1px solid #ddd; border-radius:10px; overflow:hidden; background:white;">
+            <img
+              src="${picsum}"
+              alt="${activity}"
+              data-query="${encodeURIComponent(activity + " " + destination)}"
+              style="width:100%; height:200px; object-fit:cover; display:block;"
+              onerror="this.onerror=null; this.src='${picsum}'"
+            />
+            <div style="padding:15px;">
+              <strong>Day ${i + 1}</strong> – <em>${interest}</em>: ${activity}<br>
+              <a href="${searchLink}" target="_blank">📍 View on Map</a>
+
+              <button
+                onclick="toggleReviewForm('${activityId}')"
+                style="margin-top:10px; background:#2196F3; color:white; padding:6px 14px; border:none; border-radius:5px; cursor:pointer;">
+                ✍️ Write a Review
+              </button>
+
+              <div class="review-form" id="form-${activityId}" style="display:none; margin-top:10px;">
+                <textarea
+                  id="review-${activityId}"
+                  placeholder="Write your review..."
+                  style="width:100%; padding:8px; border-radius:5px; border:1px solid #ccc; box-sizing:border-box;">
+                </textarea>
+                <select id="rating-${activityId}" style="margin-top:5px; width:100%; padding:6px; border-radius:5px;">
+                  <option value="5">⭐️⭐️⭐️⭐️⭐️</option>
+                  <option value="4">⭐️⭐️⭐️⭐️</option>
+                  <option value="3">⭐️⭐️⭐️</option>
+                  <option value="2">⭐️⭐️</option>
+                  <option value="1">⭐️</option>
+                </select>
+                <button
+                  onclick="submitUserReview('${activityId}')"
+                  style="margin-top:8px; padding:8px 16px; background:#4CAF50; color:white; border:none; border-radius:5px; cursor:pointer; width:100%;">
+                  Submit Review
+                </button>
+              </div>
+
+              <div id="reviews-${activityId}" style="margin-top:15px;"></div>
+            </div>
+          </div>
+        `;
+
+        outputList.appendChild(li);
+        allActivityIds.push({ activityId, activity });
+      }
+
+      // STEP 2: Attach Firebase listeners now that all DOM is stable
+      allActivityIds.forEach(({ activityId }) => displayReviews(activityId));
+
+      // STEP 3: Load Pexels images async (swap in after DOM renders)
+      allActivityIds.forEach(async ({ activityId, activity }) => {
+        const img = outputList.querySelector(`img[data-query="${encodeURIComponent(activity + " " + destination)}"]`);
+        if (!img) return;
+        const pexelsUrl = await fetchImage(`${activity} ${destination}`);
+        if (pexelsUrl) img.src = pexelsUrl;
+      });
+
+      // Save trip history
+      let history = JSON.parse(localStorage.getItem("recentTrips")) || [];
+      history.unshift({ destination, origin, startDate: startDate.toISOString(), endDate: endDate.toISOString(), interests: rankedInterests, timestamp: new Date().toISOString() });
+      history = history.slice(0, 5);
+      localStorage.setItem("recentTrips", JSON.stringify(history));
+    }
+
+    generateCustomTour();
+
+    /* =========================================================
+       PDF DOWNLOAD
+    ========================================================= */
+    function downloadPDF() {
+      const itinerarySection = document.querySelector(".section:nth-of-type(4)");
+      const images = itinerarySection.querySelectorAll("img");
+      const imagePromises = Array.from(images).map(img =>
+        img.complete ? Promise.resolve() : new Promise(resolve => { img.onload = resolve; img.onerror = resolve; })
+      );
+      Promise.all(imagePromises).then(() => {
+        html2pdf().from(itinerarySection).set({
+          margin: 0.5,
+          filename: "Travel_Itinerary.pdf",
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: "in", format: "letter", orientation: "portrait" }
+        }).save();
+      });
+    }
+  </script>
 
 </body>
 </html>

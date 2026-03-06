@@ -8,7 +8,7 @@ import {
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
-// 🔍 Analyze sentiment via your ML API
+// 🔍 Sentiment API
 async function analyzeSentiment(text) {
   try {
     const res = await fetch("http://127.0.0.1:5000/sentiment", {
@@ -16,58 +16,81 @@ async function analyzeSentiment(text) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text })
     });
-    const result = await res.json();
-    return result.label || "Unknown";
-  } catch (err) {
-    console.error("Sentiment analysis failed:", err);
-    return "Unknown";
+    const data = await res.json();
+    return (data.label || "neutral").toLowerCase();
+  } catch {
+    return "neutral";
   }
 }
 
-// ✍️ Add new review to Firestore with sentiment & user info
-export async function submitReview(activity, text, rating) {
-  const sentiment = await analyzeSentiment(text);
-  const username = localStorage.getItem("loggedInUser") || "guest";
+// ✍️ Submit review
+async function submitUserReview(activityId) {
+  console.log("🟢 Submit clicked for:", activityId);
 
-  await addDoc(collection(db, "reviews"), {
-    activity,
-    review: text,
-    rating: parseInt(rating),
-    sentiment,
-    user: username,
+  const reviewEl = document.getElementById(`review-${activityId}`);
+  const ratingEl = document.getElementById(`rating-${activityId}`);
+
+  if (!reviewEl || !ratingEl) {
+    alert("Review elements not found");
+    return;
+  }
+
+  const text = reviewEl.value.trim();
+  const rating = Number(ratingEl.value);
+
+  if (!text) {
+    alert("Please write a review");
+    return;
+  }
+
+  const review = {
+    user: localStorage.getItem("loggedInUser") || "guest",
+    text,
+    rating,
+    sentiment: "neutral",
     timestamp: Date.now()
-  });
+  };
+
+  try {
+    await firebase.database().ref(`reviews/${activityId}`).push(review);
+    console.log("✅ Review saved");
+
+    reviewEl.value = "";
+    document.getElementById(`form-${activityId}`).style.display = "none";
+
+    // 🔥 FORCE refresh reviews
+    loadReviewsOnce(activityId);
+
+  } catch (err) {
+    console.error("❌ Review save failed:", err);
+    alert("Failed to submit review");
+  }
 }
 
-// 📥 Listen and render reviews with sentiment badges
-export function loadReviews(activity) {
-  const q = query(collection(db, "reviews"), where("activity", "==", activity));
-  const container = document.getElementById(`reviews-${activity}`);
+// 📥 Load reviews
+function loadReviewsOnce(activityId) {
+  const container = document.getElementById(`reviews-${activityId}`);
+  if (!container) return;
 
-  onSnapshot(q, (snapshot) => {
-    container.innerHTML = "";
-    if (snapshot.empty) {
-      container.innerHTML = "<p>No reviews yet.</p>";
-      return;
-    }
+  firebase.database()
+    .ref(`reviews/${activityId}`)
+    .once("value")
+    .then(snapshot => {
+      const data = snapshot.val();
 
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      const time = new Date(data.timestamp).toLocaleString();
-      const sentimentColor =
-        data.sentiment === "Positive" ? "#4CAF50" :
-        data.sentiment === "Negative" ? "#F44336" : "#9E9E9E";
+      if (!data) {
+        container.innerHTML = "<p>No reviews yet.</p>";
+        return;
+      }
 
-      container.innerHTML += `
-        <div style="margin-top: 10px; padding:10px; background:#f9f9f9; border-radius:8px;">
-          <strong>${data.user}</strong> <span style="color:#666;">(${time})</span><br>
-          <span style="color:gold;">${"⭐️".repeat(data.rating)}</span><br>
-          <span style="background:${sentimentColor}; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">
-            ${data.sentiment}
-          </span>
-          <p>${data.review}</p>
+      const reviews = Object.values(data);
+
+      container.innerHTML = reviews.map(r => `
+        <div style="background:#f9f9f9;padding:10px;border-radius:8px;margin:10px 0;">
+          <strong>${r.user}</strong><br>
+          <span style="color:gold">${"⭐".repeat(r.rating)}</span>
+          <p>${r.text}</p>
         </div>
-      `;
+      `).join("");
     });
-  });
 }

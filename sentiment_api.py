@@ -1,28 +1,35 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from textblob import TextBlob
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 app = Flask(__name__)
-CORS(app)  # allow cross-origin requests
+CORS(app)
 
-@app.route('/sentiment', methods=['POST'])
+analyzer = SentimentIntensityAnalyzer()
+
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"message": "Sentiment API is running"})
+
+@app.route("/sentiment", methods=["POST"])
 def sentiment():
     data = request.get_json()
-    text = data.get('text', '')
-    blob = TextBlob(text)
-    polarity = blob.sentiment.polarity
+    text = data.get("text", "")
 
-    print(f"Text: {text} | Polarity: {polarity}")  # Debugging log
+    scores = analyzer.polarity_scores(text)
+    compound = scores["compound"]
 
-    # Improved thresholding
-    if polarity > 0.01:
+    if compound >= 0.05:
         label = "positive"
-    elif polarity < -0.01:
+    elif compound <= -0.05:
         label = "negative"
     else:
         label = "neutral"
 
-    return jsonify({"label": label})
+    return jsonify({
+        "label": label,
+        "score": compound
+    })
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)

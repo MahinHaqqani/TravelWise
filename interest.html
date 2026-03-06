@@ -1,52 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="style.css" />
-
   <meta charset="UTF-8" />
-  <title>Rank Your Interests - Travel Planner</title><!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  <title>Rank Your Interests - Travel Planner</title>
 
-<!-- Your Config -->
-<script src="firebaseConfig.js"></script>
-<script>
-  // Check if user is logged in
-  const user = localStorage.getItem("loggedInUser");
-
-  if (!user) {
-    alert("Please login or continue as guest.");
-    window.location.href = "auth.html";
-  } else {
-    console.log("Logged in as:", user);
-  }
-</script>
-<div id="welcomeMessage" style="text-align:right; padding: 10px; font-weight:bold;"></div>
-
-<script>
-  const currentUser = localStorage.getItem("loggedInUser") || "guest";
-  document.getElementById("welcomeMessage").innerText = `👋 Welcome, ${currentUser}`;
-</script>
-<button onclick="logoutUser()" style="position:absolute; top:10px; right:10px;">Logout</button>
-
-<script>
-  function logoutUser() {
-    localStorage.removeItem("loggedInUser");
-    alert("You’ve been logged out.");
-    window.location.href = "auth.html";
-  }
-</script>
-
-
+  <!-- Fonts & Styles -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
   <style>
-    
     body {
-        
       margin: 0;
       padding: 0;
       font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #141e30, #243b55);
       color: #fff;
       min-height: 100vh;
       display: flex;
@@ -78,35 +44,28 @@
     }
 
     ul#interest-list {
-      list-style-type: none;
+      list-style: none;
       padding: 0;
       margin: 0;
     }
 
     ul#interest-list li {
-      background-color: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.9);
       padding: 15px 20px;
       margin: 12px 0;
       border-radius: 12px;
       font-weight: 600;
       font-size: 16px;
       color: #333;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       cursor: move;
       display: flex;
       align-items: center;
       gap: 10px;
-      transition: transform 0.2s ease, box-shadow 0.3s ease;
-    }
-
-    ul#interest-list li:hover {
-      transform: scale(1.03);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+      transition: transform 0.2s ease;
     }
 
     ul#interest-list li.dragging {
       opacity: 0.5;
-      transform: scale(0.98);
     }
 
     button {
@@ -119,12 +78,6 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.3s ease, transform 0.2s ease;
-    }
-
-    button:hover {
-      background-color: #ff3a1a;
-      transform: translateY(-1px);
     }
 
     .emoji {
@@ -132,68 +85,84 @@
     }
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <h2>🌍 Rank Your Travel Interests</h2>
-    <p>Drag and drop to rank from top to bottom</p>
 
-    <ul id="interest-list">
-      <li draggable="true"><span class="emoji">🧗</span> Adventure</li>
-      <li draggable="true"><span class="emoji">🏛️</span> History</li>
-      <li draggable="true"><span class="emoji">🌲</span> Nature</li>
-      <li draggable="true"><span class="emoji">🍜</span> Food</li>
-      <li draggable="true"><span class="emoji">🛍️</span> Shopping</li>
-    </ul>
+<div class="container">
+  <h2>🌍 Rank Your Travel Interests</h2>
+  <p>Drag and drop to rank from top to bottom</p>
 
-    <button onclick="saveInterests()">Continue ➡️</button>
-  </div>
-    <audio id="clickSound" src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3"></audio>
+  <ul id="interest-list">
+    <li draggable="true"><span class="emoji">🧗</span> Adventure</li>
+    <li draggable="true"><span class="emoji">🏛️</span> History</li>
+    <li draggable="true"><span class="emoji">🌲</span> Nature</li>
+    <li draggable="true"><span class="emoji">🍜</span> Food</li>
+    <li draggable="true"><span class="emoji">🛍️</span> Shopping</li>
+  </ul>
 
-  <script>
-  const list = document.getElementById("interest-list");
-const clickSound = document.getElementById("clickSound");
-let dragSrcEl = null;
+  <button onclick="saveInterests()">Continue ➡️</button>
+</div>
 
-list.addEventListener("mousedown", function (e) {
-  clickSound.currentTime = 0;
-  clickSound.play();
-});
-
-list.addEventListener("dragstart", function (e) {
-  dragSrcEl = e.target.closest('li');
-  if (!dragSrcEl) return;
-  dragSrcEl.classList.add('dragging');
-});
-
-list.addEventListener("dragend", function () {
-  if (dragSrcEl) dragSrcEl.classList.remove('dragging');
-  dragSrcEl = null;
-});
-
-list.addEventListener("dragover", function (e) {
-  e.preventDefault();
-  const target = e.target.closest('li');
-  if (target && target !== dragSrcEl) {
-    const rect = target.getBoundingClientRect();
-    const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
-    list.insertBefore(dragSrcEl, next ? target.nextSibling : target);
-  }
-});
-
-function saveInterests() {
-  const rankedInterests = [];
-  document.querySelectorAll("#interest-list li").forEach((li) => {
-    rankedInterests.push(li.innerText.trim().replace(/^[^\w]+\s/, ''));
-  });
-  localStorage.setItem("rankedInterests", JSON.stringify(rankedInterests));
-  window.location.href = "map.html";
-}
-
-</script>
 <audio id="clickSound" preload="auto">
   <source src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
 </audio>
+
+<script>
+/* 🔐 LOGIN GUARD */
+const user = localStorage.getItem("loggedInUser");
+if (!user) {
+  alert("Please login or continue as guest.");
+  window.location.href = "auth.html";
+}
+
+/* 🔁 DRAG & DROP LOGIC */
+const list = document.getElementById("interest-list");
+const clickSound = document.getElementById("clickSound");
+let draggedItem = null;
+
+list.addEventListener("dragstart", (e) => {
+  draggedItem = e.target.closest("li");
+  draggedItem.classList.add("dragging");
+});
+
+list.addEventListener("dragend", () => {
+  if (draggedItem) draggedItem.classList.remove("dragging");
+  draggedItem = null;
+});
+
+list.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  const target = e.target.closest("li");
+  if (!target || target === draggedItem) return;
+
+  const rect = target.getBoundingClientRect();
+  const next = (e.clientY - rect.top) / rect.height > 0.5;
+  list.insertBefore(draggedItem, next ? target.nextSibling : target);
+});
+
+/* 💾 SAVE INTERESTS (FIXED & FINAL) */
+function saveInterests() {
+  clickSound.currentTime = 0;
+  clickSound.play();
+
+  const rankedInterests = Array.from(
+    document.querySelectorAll("#interest-list li")
+  ).map(li => li.innerText.replace(/^[^\w]+\s*/, "").trim());
+
+  if (rankedInterests.length === 0) {
+    alert("Please rank at least one interest.");
+    return;
+  }
+
+  localStorage.setItem(
+    "rankedInterests",
+    JSON.stringify(rankedInterests)
+  );
+
+  console.log("Saved interests:", rankedInterests);
+  window.location.href = "map.html";
+}
+</script>
 
 </body>
 </html>
